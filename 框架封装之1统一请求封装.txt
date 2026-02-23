@@ -1,0 +1,33 @@
+1一万个接口，复制一万次，重复性的事情
+组装成流水线==接口自动化测试框架
+请求也永远都只有四要素
+2成本控制
+统一请求封装
+1实现所有请求统一的监控
+2去除重复的代码
+新建一个包，创建封装接口文件
+import requests
+import re
+
+class RequestsUtil:
+    sess = requests.session()
+
+    def send_all_requests(self,**kwargs):
+        res = RequestsUtil.sess.request(**kwargs)
+        print(res.text)
+        return res
+
+在测试目录下测试文件中调用封装接口
+import requests
+import commons.requests_util as requests_util
+import re
+class TestLogin():
+    cirf = None
+    def test_start(self):
+        urls = "http://47.107.116.139/phpwind"
+此处调用 res = requests_util.RequestsUtil().send_all_requests(method="get",url=urls)
+        result = res.text
+        TestLogin.cirf = re.search('name="csrf_token" value="(.*?)"/',res.text).group(1)
+        print(TestLogin.cirf)
+if __name__ == '__main__':
+	TestLogin().test_start()

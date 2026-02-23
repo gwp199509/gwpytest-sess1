@@ -1,0 +1,22 @@
+数据驱动：数据驱动用例执行。
+pytest数据驱动：@pytest.mark.parametrize(args_name,args_value)
+args_name:参数名    args_valus:参数值
+需要在yaml_util.py 里面再添加读取数据函数
+def read_data(path):
+    with open(path,encoding="utf-8",mode='r') as f:
+        value = yaml.safe_load(f)
+        return value
+在测试用例test_api.py 里面传入yaml读取的数据。注意文件路径，执行文件是run.py 
+如果yaml里有多个用例，会依次读取并传入执行。[{字典1},{字典2},{字典3}]
+class TestLogin():
+    @pytest.mark.parametrize("case_data",yaml_util.read_data('./testcase/test_api.yaml'))
+    def test_start2(self,case_data):
+        urls = case_data["request"]['url']
+        methods =case_data['request']['method']
+        paramss = case_data['request']['params']
+        res = requests_util.RequestsUtil().send_all_requests(method=methods, url=urls,params=paramss)
+        yaml_util.write_yaml({"cirf": re.search('name="csrf_token" value="(.*?)"/', res.text).group(1)})
+
+
+
+

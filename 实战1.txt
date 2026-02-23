@@ -1,0 +1,72 @@
+JSON和字典本质不一样，JSON是字符串，字典是Dict，可以相互转换
+import requests
+import re
+class TestLogin():
+	token = None
+    def test_login(self):
+        urls = "https://api.weixin.qq.com/cgi-bin/token"
+        paramss = {
+            "grant_type":"cliens_credential",
+            "appid":"wx74a8627810cfa308",
+            "secret":"e40a02f9a8097df497e6aaf93ab80"
+        }
+        res = requests.get(url=urls,params=paramss)
+        result = res.text
+		#正则表达式取值
+		TestLogin.token = re.search('"access_token":"(.*?)"',result).group(1)
+        assert "access_token" in res.text
+    def test_select(self):
+        urls = "https://api.weixin.qq.com/cgi-bin/tags/get"
+        paramss = {
+            "access_token":TestLogin.token
+        }
+        res = requests.get(url=urls,params=paramss)
+        print(res.text)
+		assert "" in res.text
+    def test_login_out(self):
+        pass
+    def test_start(self):
+        urls = "http://47.107.116.139/phpwind"
+        res = requests.get(url=urls)
+        print(res.text)
+        result = res.text
+        TestLogin.cirf = re.search('name="csrf_token" value="(.*?)"/',res.text).group(1)
+        print(TestLogin.cirf)
+        TestLogin.ck = res.cookies
+    def test_login2(self):
+        urls = "http://47.107.116.139/phpwind/index.php"
+        paramss = {
+            "m":"u",
+            "c":"login",
+            "a":"dorun"
+        }
+        headerss = {
+            "Accept":"application/json,text/javascript,/;q=0.01",
+            "X-Requested-With":"XMLHttpRequest"
+        }
+        datas = {
+            "username":"pytest",
+            "password":"pytest",
+            "csrf_token":'TestLogin.cirf',
+            "backurl":"http://47.107.116.139/phpwind/",
+            "invite":""
+        }
+        res = requests.post(url=urls,params=paramss,headers=headerss,data=datas,cookies=TestLogin.ck)
+        print(res.text)
+if __name__ == '__main__':
+	TestLogin().test_login()
+    TestLogin().test_select()
+	TestLogin().test_start()
+	TestLogin().test_login2()
+	
+	
+接口关联：第一个接口的返回值作为第二个接口的参数。 正则表达式和JsonPath应用
+正则表达式：在字符串里面取值
+re.search('正则表达式',str)
+JsonPath：在字典里面取值
+
+如果全部都写对了，但是测试失败，需要考虑接口之间是不是需要传cookies
+用sess会自动传cookies
+sess = requests.session()
+	TestLogin.sess.request("get",url=urls,params=paramss,data=datass)
+	

@@ -1,0 +1,16 @@
+api_frame_1   项目目录
+.venv		  创建项目时默认带的
+commons       封装目录
+	__init__.py  创建包时默认带的
+	requests_tuil.py   统一请求封装
+	yaml_util.py       接口关联封装    操作方法：读，写，清空
+testcases
+	__init__.py  创建包时默认带的
+	conftest.py  创建用例前后操作，名字是固定的
+	test_api.py  测试用例
+	test_phpwind.py 测试用例
+	....			各个测试用例
+extract.yaml       接口关联封装里面要操作的文件，存放中间变量
+pytest.ini		   配置pytest规则
+requirement.txt    安装各种pytest插件时用
+run.py			   管理所有测试用例

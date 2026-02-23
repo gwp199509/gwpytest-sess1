@@ -1,0 +1,56 @@
+python
+requests
+pytest
+allure
+loggin
+jenkins
+pycharm  终端  pip install requests
+接口自动化测试
+	1发请求：请求方式，请求路径，请求头，请求数据
+	2接响应：响应码，响应信息，响应头，响应数据
+	3断言结果：判断响应的内容是否正确
+创建测试包testcase，新建py文件test_api.py
+    ctrl+左键，查看函数体
+import requests
+
+1发请求：请求方式，请求路径，请求头，请求数据
+第一种请求方式
+requests.get(url, params=None, **kwargs)
+requests.post(url, data=None, json=None, **kwargs)
+requests.post(url, data=None, json=None, **kwargs)
+requests.delete(url, **kwargs)
+第二种请求方式
+requests.request(method, url, **kwargs)
+第三种请求方式   能够自动传多个请求的cookie值。
+sess = requests.session()     sess 会话，项目里面从登陆到登出。
+sess.request(
+        self,
+        method,   		请求方式
+        url,	 	    请求路径
+        params=None,	请求数据格式1：查询字符串数据，在接口地址后面以？传的数据
+        data=None,		请求数据格式2：表单参数，类似表格
+		json=None,		请求数据格式3：JSON参数，类似字符串，包含{}和【】组成的字符串
+		files=None,		请求数据格式4：文件参数
+        headers=None,	请求头
+        cookies=None,	cookies
+        auth=None,		鉴权
+        timeout=None,	超时
+        allow_redirects=True,	是否允许重定向
+        proxies=None,	代理
+        hooks=None,		钩子函数
+        stream=None,	下载
+        verify=None,	https校验
+        cert=None,		CA证书
+        )
+第一种底层就是调用的第二种，第二种底层就是调用的第三种。
+
+2接响应：响应码，响应信息，响应头，响应数据
+res.status_code	响应码
+res.headers		响应头
+res.reason		响应信息
+res.text		响应数据（字符串格式）
+res.json()		响应数据（字典格式）
+res.content		响应数据（字节格式）
+
+3断言结果：判断响应的内容是否正确
+assert 预期结果 == 实际结果

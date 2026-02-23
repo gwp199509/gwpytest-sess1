@@ -1,0 +1,11 @@
+测试用例前后操作：使用conftest+fixture
+1创建conftest.py文件，名字是固定的。
+2在方法上面加：@pytest.fixture()
+import pytest
+@pytest.fixture(scope="function",autouse=False)  
+#scope作用域。自动还是手动，手动需要在测试用例参数内写上下面的函数名调用
+def exe_sql():
+    print('用例之前执行sql命令')
+    yield
+    print('用例之后执行关闭操作')
+	

@@ -1,0 +1,35 @@
+引入pytest来自动的管理和运行测试用例，管理有规则：
+1模块名必须以test开头
+2类名必须以Test开头
+3测试用例必须以test开头
+
+规则可以自定义：项目/里创建pytest.ini
+[pytest]
+#配置常用运行参数  显示出来 -n 2并发
+addopts = -vs -n 2
+#配置测试用例的位置
+testpaths = ./testcase
+#配置模块名的规则
+python_files = test_*.py
+#配置类的规则
+python_classes = test*
+#配置测试用例（方法）的规则
+python_functions = test_* 
+
+@pytest.mark.run(order=1)用例上面控制执行顺序
+
+安装     项目/里创建一个requirement.txt文件
+pytest
+pytest-html
+pytest-xdist
+pytest-ordering
+pytest-rerunfailures
+pytest-base-url
+allure-pytest
+
+安装命令：pip install -r requirement.txt
+在项目/创建run.py文件
+import pytest
+if __name__ == '__main__':
+    pytest.main()
+不管测试用例有多少，都会执行

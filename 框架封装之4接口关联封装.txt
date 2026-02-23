@@ -1,0 +1,65 @@
+1为了避免多个py文件之间存在接口关联而导致用例被重复执行
+2如果有100次接口关联，意味着有100个中间变量，怎么管理
+在封装包里新建yaml_util.py 文件
+在项目/里面创建extract.yaml存放中间变量
+安装 pip install pyyaml
+在yaml_util.yaml文件中
+import yaml
+#读
+def read_yaml(key):
+    with open("./extract.yaml",encoding="utf-8",mode='r') as f:
+        value = yaml.safe_load(f)
+        return value[key]
+#写
+def write_yaml(data):
+    with open("./extract.yaml",encoding="utf-8",mode="a+") as f:
+        print()
+        yaml.safe_dump(data,stream=f,allow_unicode=True)
+#清空
+def clear_yaml():
+    with open("./extract.yaml",encoding="utf=-8",mode="w") as f:
+        f.truncate()
+
+测试用例中
+    @pytest.mark.run(order=1)
+    def test_start2(self):
+        urls = "http://47.107.116.139/phpwind"
+        res = requests_util.RequestsUtil().send_all_requests(method="get",url=urls)
+        # print(res.text)
+        result = res.text
+        # test_api.TestLogin.cirf = re.search('name="csrf_token" value="(.*?)"/',res.text).group(1)
+        yaml_util.write_yaml({"cirf":re.search('name="csrf_token" value="(.*?)"/',res.text).group(1)})
+		#获取时用写
+    def test_login2(self,exe_sql):
+        urls = "http://47.107.116.139/phpwind/index.php"
+        paramss = {
+            "m":"u",
+            "c":"login",
+            "a":"dorun"
+        }
+        headerss = {
+            "Accept":"application/json,text/javascript,/;q=0.01",
+            "X-Requested-With":"XMLHttpRequest"
+        }
+        datass = {
+            "username":"pytest",
+            "password":"pytest",
+            "csrf_token":yaml_util.read_yaml('cirf'), #使用时用读
+            "backurl":"http://47.107.116.139/phpwind/",
+            "invite":""
+        }
+        # res = TestLogin.sess.request("post",url=urls,params=paramss,headers=headerss,data=datass,cookies=TestLogin.ck)
+        res = requests_util.RequestsUtil().send_all_requests(method="post",url=urls,params=paramss,data=datass,headers=headerss)
+
+避免重复写入，应在测试用例执行前清空，前面的conftest.py文件
+import pytest
+import commons.yaml_util as yaml_util
+@pytest.fixture(scope="session",autouse=True)  #此时是接口不是函数
+def exe_sql():
+    yaml_util.clear_yaml()
+	#yield
+	#pass
+	
+	
+	
+
