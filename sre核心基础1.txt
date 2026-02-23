@@ -1,0 +1,94 @@
+1，Linux组成
+	1，各种应用程序：Linux各种命令，服务...
+	2，命令解释器：shell，bash
+	3，linux内核：托沃兹开发
+2，install 之前进入内核，添加net.ifnames=0 biosdevname=0
+	用于让网卡名字变成eth0,1....形式，
+	kdump建议关闭，机密安全
+  ip138.com  查看公网
+3，远程连接排障3步
+	1，是否通畅，ping ip 
+	2，是否拦截，防火墙，Selinux
+	3，是否端口开放，telnet ip port
+4，命令行信息：用户@主机名 目录 用户身份#root $普通用户
+5，命令查询：   man 命令     命令 --help   info  命令    
+6，linux快捷键： ctrl a 移到开头  ctrl e 移到结尾
+	ctrl u 光标到行首删除   ctrl k 光标到行尾删除
+	ctrl l 清屏    ctrl c 取消
+	ctrl z 让当前正在运行的命令，后台挂起
+7，关机重启  shutdown  shutdown -c 取消关机  shutdown -h 10 分钟 
+	halt  poweroff   init 0
+	shutdown -r  10分钟  reboot   init 6
+8，目录结构
+	/etc/  系统服务配置文件的目录，存放系统，服务，命令的配置。
+	/home/  普通用户家目录。
+	/root/  root家目录
+	/dev/   device 设备文件目录，硬盘、光盘...
+	/tmp/   临时目录
+	/proc/  系统服务，进程信息。
+	/bin/ >  /usr/bin   二进制文件，命令   全都可以使用
+	/sbin/ > /usr/sbin  超级命令，只有root可以使用
+9,路径： 绝对路径：从/开始    相对路径：不是从/开始 
+10，必会命令： cd  ls -l -h    pwd  mkdir mkdir -p 创建多级目录 touch  mv  
+	cp -a 所有  -r 递归复制  -p 保持属性不变   -d  复制软链接  
+	echo  > 重定向，先删除，再写入  >>追加重定向，直接在原有后面写入    
+	vi/vim vi 系统自带，没有vim功能多。  vim需要额外安装，相当于vi的升级版。
+		输入模式 esc/aioAIO 命令模式  ：/esc 末行模式
+		dd 删除 yy复制  p粘贴  gg第一行  G最后一行
+		u取消一次，U取消当前行所有编辑  ZZ保存退出
+		视图：光标移到m行，ctrl v ，下键到n行，大写I插入，输入#后esc，自动注释  取消时选中x或dd
+		set nu  set nonu 显示/取消行号   复制粘贴若有格式变化，末行执行set paste再粘贴即可
+		s/old/new/ 替换第一个  s/old/new/g 替换光标所在行所有的  m,ns/old/new/g 替换m到n行所有的
+		/从上而下查找   ？从下而上查找  n下一个  N 上一个
+		有swap隐藏文件时，vim -r 文件  恢复  rm 文件.swap 删除
+	rm -f 强制  -r 递归删除     cat -n 显示行号
+	x{01..10} x{a..y} 生成序列，批量操作
+10，配置国内yum源  
+	curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo
+	curl -o /etc/yum.repos.d/epel.repo https://mirrors.aliyun.com/repo/epel-7.repo
+	yum -y install tree vim wget bash-completion bash-completion-extras lrzsz net-tools sysstat 
+		iotop iftop htop unzip nc nmap telnet bc psmisc httpd-tools bind-utils nethogs expect
+11，配置文件
+	/etc/hostname  主机名配置文件  hostnamectl set-hostname 主机名 永久生效
+	/etc/hosts   主机名和ip的对应关系
+	/etc/sysconfig/network-scripts/ifcfg-eth0  网卡配置文件
+	/etc/fstab      开机自动挂载的配置文件
+	/etc/motd       文件内容会在用户登录系统后显示
+	/etc/issue  /etc/issue.net      文件内容会在用户登录系统前显示
+	  /var/log/    系统及服务的各种日志目录
+	  /var/log/secure  存放用户登录情况日志
+	  /var/log/messages 通用各种服务的日志，很多。
+	/proc/  系统、进程信息、内核配置等
+	/proc/cpuinfo   cpu信息
+	/proc/meminfo   内存信息
+	/proc/loadavg   系统负载信息，衡量系统繁忙程度
+	/proc/mounts    系统挂载信息
+12，查看日志 head  tail  less  more
+	head  -n num  默认前10行
+	tail  -n num  默认后10行   -f  末尾的实时更新
+	less  按页显示文件内容  q退出 空格/f 下一页   b上一页  G最后一行 g第一行  99g 99行 /搜索 -N显示行号
+	more  按页显示文件内容，到达最后一行就退出 
+13，统计  wc   统计文件行数，统计命令结果行数   -l 
+14，查询命令位置  which    whereis  
+15，文件对比  diff  vim diff
+16，排序去重组合 sort 排序  uniq  去重并统计次数
+	sort 默认按字符比较，-n 按数字比较 默认升序   
+		-k 指定某一列，根据某一列进行排序 ll /etc/passwd | sort -rnk5 | head 10
+		-r 逆序排序
+		-t 指定分隔符，只能指定1个字符 sort -t ':' -rnk5 /etc/passwd 
+		多行排序  -k2  -k4  先排第二列，有一样的再按第4列排
+		        -k2,2 -k4,4  仅对第二行排序，一样了再仅对第四行排序
+	uniq  -c 文件 相邻一样的话就合并，并统计次数         一般和sort一起使用
+	sort secure-ip.txt | uniq -c | sort -rn | head 5
+17，系统互传  yum -y install lrzsz     rz上传到linux    sz下载
+18,时间日期  date  ntpdate  
+	date +%F   2026-02-23  +%Y-%m-%d 
+		-d '-1day'  -d '20260223'   -s  手动修改时间
+	ntpdate   yum -y install ntpdate     ntpdate ntp1.aliyun.com  同步时间
+	修改时区  timedatectl set-timezone 
+	touch gwp-`date +%F`.txt    优先执行``内的命令
+	
+	
+
+
+
