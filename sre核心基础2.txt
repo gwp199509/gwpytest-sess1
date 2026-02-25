@@ -1,0 +1,103 @@
+1，文件属性
+	ls -lhi
+	  33574990 -rw-------. 1 root root 1.3K Feb 24 02:30 anaconda-ks.cfg
+	  inode索引节点 文件类型、权限 .selinux相关 硬链接数量 属主 属组 大小  修改时间文件名
+	  inode是一个空间，inode号是空间的位置
+		inode空间存放文件属性信息、文件大小、修改时间、权限、所有者....
+		inode空间存放block的位置，指向文件实体的指针
+		block块：存放数据
+	  访问文件时，先进入inode核实，通过后找到block位置访问文件
+	  每创建1个非空文件至少占用1个inode，1个block
+	  1个block默认4k，格式化时创建的
+	df -h  查看block使用情况
+	df -i  查看inode使用情况
+	建议扩展名
+	.txt  普通文件   .sh .bash shell脚本  .conf .cfg  .xml .yaml .yml 配置文件 .pypython脚本
+2，文件类型
+	- 文件，file
+	d 目录，directory
+	l 软链接
+	c 字符设备，char 特殊文件
+	b 块设备 block 硬盘
+	s 套接字
+	p 管道文件
+	file 文件  查看文件详细类型
+3，软硬链接
+	软链接 类似于Windows快捷方式，也是一种文件，用于存放源文件的路径
+	硬链接 在同一个分区中，不同文件的inode号码相同了，这些文件互为硬链接
+	ln -s 源文件 软链接文件   不加-s 硬链接
+	 软链接 可以给文件、目录创建
+	 硬链接 只能给文件创建，且不能跨分区
+	  删除软链接，源文件不受影响
+	  删除源文件，软链接不可用，硬链接不受影响
+	  删除硬链接，源文件、软链接都不受影响
+4，查看大小
+	ll -h /etc/fstab  查看文件大小
+	du -sh /etc/ 	  查看目录大小
+5，时间
+	mtime  修改时间   atime 访问时间  ctime文件属性的变化时间
+6，打包压缩三剑客  tar gzip  zip/unzip
+	tar 打包：文件放在一起   压缩：进行压缩，节约空间
+	 创建 tar -zcvf  压缩包名  要压缩的东西
+		v verbose显示过程(会刷屏，未来不加)
+		c create创建，只放cf就是打包，不压缩
+		z gzip 上面创建包后，通过gzip压缩
+		f file 指定压缩包，f必须放在最后
+	 查看  tar -ztvf 压缩包名 
+		t list 列表，查看压缩包内容
+	 解压  tar -zxvf  要解压的包名    默认解压到当前目录
+		x extract 解压 
+	 解压到指定目录  tar -zxvf 要解压的包名 -C 指定目录
+	gzip  gzip 文件名  压缩     gzip -d 包名 解压
+	zip/unzip   专门处理.zip   .zip 是Windows和linux共同支持格式
+	  上传Windows中的zip包，在linux中解压
+	  zip -r 包名 要压缩的东西  -r 压缩目录
+	  unzip 包名  解压
+7，linux四剑客  find grep  awk  sed
+	grep 会把匹配到的行显示出来
+	  grep  '要找的内容'  文件 
+	    -n显示行号  -i不区分大小写  -v排除，即不要查询什么
+	  ps -ef | grep 'crond' 可对接管道
+	find  目录  指定类型  指定名字
+		find /etc/ -type f -name ''
+		-type  类型  f文件 d目录
+		-name 名字名 精确查询 '*x*' 模糊查询 -iname 不区分大小写
+		-size  大小 +大于 -小于  +100K
+		-mtime 根据文件的修改时间查找   +7 7天之前 -7最近7天
+		-maxdepth 必须是第一个选项，最多查到几层
+	  find+简单命令      
+		用``或$() ls -l `find /etc/ -type f -name '*.txt'`
+		用管道|  find /etc/ -type f -name '*.txt' | xargs ls -l
+			|xargs 把前面传过来的字符串转换为后面命令的参数
+	  find+打包压缩 
+		用``或$()
+		用|xargs
+		用-exec find . -type f -name '*.txt' -exec tar -zcvf gwp.tar.gz {} \; 找一个压缩一次 +全找到后再执行压缩
+	  find+/cp/mv
+		用``或$
+		用|xargs cp -t 目标  源 源 源...  不加-t 源 源 源... 目标 
+		用-exec 
+8，别名
+	查看 alias
+	创建 alias 昵称=‘命令’
+	  不使用别名  \昵称或昵称的绝对路径 \rm或/bin/rm 
+	  永久生效  ~/.bashrc仅当前用户 或 /etc/profile全局 改完之后source一下生效
+	    rm cp mv系统已经默认设备别名-i ，修改完profile后还需要注释~/.bashrc里面的别名
+		
+		
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
