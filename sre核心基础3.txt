@@ -1,1 +1,91 @@
-1，用户
+1，用户管理
+	用户账号：超级用户root 
+	普通用户一般只在用户自己的宿主目录下有完全权限
+ 	虚拟用户用于维持系统或某个程序的正常运行，一般不允许登录到系统
+	  组账号：基本组（私有组）为了权限独立    附加组（公共组）
+	  UID（user identity用户标识号） GID（group identity组标识号）
+	  root用户的UID固定值为0 且 组账号的GID号固定值为0
+	  虚拟用户1-999的UIDGID，用于服务、进程运行使用的用户
+	  普通用户1000-60000的uidgid
+	/etc/passwd 存放用户信息
+		gwp:x:1000:1000::/home/gwp:/bin/bash
+		用户名:密码占位符:UID:GID:用户全名:家目录:登录shell(/bin/sh /bin/bash /sbin/nologin)
+	/etc/shadow 存放密码信息
+		gwp:$6$FPX7QynN$g3mFXZZUTKwOCqsZuT9GLbD:20509:0:99999:7:::
+		用户名:密码:上次修改密码的时间:最短有效期:最长有效期:过期提前几天通知:
+	/etc/group  用户组信息
+		gwp:x:1000:
+		用户组名:密码:GID:额外的用户
+	/etc/gshadow 用户组密码信息
+2，用户管理命令
+	增加 useradd 
+	  -u：指定UID标识号
+	  -d：指定宿主目录，缺省为/home/用户名，必须使用绝对路径
+	  -M：不为用户建立并初始化家目录
+	  -s：指定用户的登录shell，默认/bin/bash      设为/sbin/nologin时，此用户不可登录系统
+	  切换用户  su -   退出当前用户 ctrl d 
+	  groupadd -g 999 gwp     useradd -u999 -g999 -s /sbin/nologin -M gwp 
+	删除 userdel  -r 连同家目录一起删除
+	修改  修改密码  passwd   echo admin@coc1 | passwd --stdin gwp
+		 修改用户  usermod  -u -s 
+	查看  id 查询用户uid、gid、用户组信息
+		 whoami 查询当前用户名字
+		 w 查看当前登录的用户信息
+		 last  用户的登录情况
+		 lastlog 所有用户最近一次登录情况
+	/etc/skel/ 是新用户的模板，创建用户时，会把/etc/skel/下的内容复制到新用户家目录下
+		解决-bash-4.2$报错
+3，用户权限管理
+	visudo   vi /etc/sudoers
+	 gwp ALL=(ALL) /bin/cat,/bin/ls,...       gwp ALL=(ALL) NOPASSWD:ALL 授权所有
+	 sudo -l 查看sudo权限
+4，跳板机、堡垒机
+	跳板机：功能简单
+	堡垒机：多了审计功能  开源软件：jumpserver、teleport
+	  Windows下载后，rz上传linux
+	  tar -zxvf teleport-server-linux-x64-3.6.4-b3.tar.gz
+	  cd teleport-server-linux-x64-3.6.4-b3   ./setup.sh
+	  /etc/init.d/teleport status stop start restart
+	  关闭防火墙和Selinux
+	    systemctl stop firewalld  systemctl disable firewalld 
+		vim /etc/selinux/config   修改SELINUX=disabled
+		浏览器访问 http://堡垒机ip:7190    可以安装一下助手
+5，linux权限 rwx、特殊权限和用户配合
+	r 4 可读 w 2 可写 x 1 可执行   所有者 用户组 其他用户 9位权限 
+	修改权限 chmod 数字或字母
+		chmod 777 test.txt   chmod  [ugoa] [+-=] [rwx]
+	修改属主和属组
+		chown -R gwp.gwp test.txt 
+	文件的权限 x必须与r搭配，只有x无法执行
+	目录的权限 r/w需与x搭配使用，只有r/w无法读取/修改目录下文件
+	  目录的x权限表示能否进入目录，能否查看和修改目录下文件的属性信息
+	默认权限 通过umask命令控制文件和目录的默认权限
+	  最大权限减去umask的值就是默认权限，如果umask某一位是奇数，文件权限减完后对应位置加1
+	特殊权限 
+	  set位权限：对二进制可执行文件设置，权限字符为s，其他用户执行该文件时 将拥有属主和属组的权限
+        权限类型：SUID：表示对属主用户增加set位权限    SGID：表示对属组内的用户增加set位权限
+      粘滞位权限：为公共目录设置，权限字符为t  用户不能删除该目录中其他用户的文件
+        设置set位粘滞位权限
+        chmod ug+-s可执行文件
+        chmod o+-t 目录名
+        chmod mnnn 可执行文件
+        m为4对应SUID   2对应SGID  1对应粘滞位 可叠加
+6，linux特殊属性  预防重要文件或命令被修改
+	lsattr 查看这种特殊属性
+	chattr  +a属性，只能追加，无法删改
+			+i 不朽的，无法增删改
+	  
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
