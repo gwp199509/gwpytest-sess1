@@ -1,0 +1,99 @@
+系统管理：软件包管理、进程管理、服务管理、磁盘管理
+1，软件包管理  yum  rpm  编译安装  二进制安装
+   rpm 安装 rpm -ivh x.rpm i install v显示过程 h人类可读
+       https://mirrors.tuna.tsinghua.edu.cn/zabbix
+       yum -y install pcre2  根据报错安装依赖
+	   rpm -ivh /server/tools/zabbix-agent-6.0.0-1.el7.x86_64.rpm
+      查询  rpm -qa | grep zabbix 查看是否已安装
+		   rpm -ql zabbix-agent  查看安装的具体内容
+	  修改升级  rpm -Uvh /server/tools/zabbix-agent-6.0.2-1.el7.x86_64.rpm 下载新包后更新Update
+	  删除   rpm -e zabbix-agent  e erase
+  编译安装三部曲  配置 编译 编译安装 
+	  首先安装依赖软件包，工具... 
+	  ./config 安装目录，开启或关闭功能
+	  make     编译  代码->命令
+	  make install  安装  
+  yum yum命令配置文件：/etc/yum.conf    yum源配置文件目录：/etc/yum.repos.d/
+		/etc/yum.conf 
+		[main]
+		cachedir=/var/cache/yum/$basearch/$releasever   缓存目录
+		keepcache=0   是否保留缓存  0 1
+      安装  yum -y install tree    解析tree是否有依赖   yum请求yum源地址  存在就下载
+	   yum源配置  查看 yum repolist
+		wget -O /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo 
+		wget -O /etc/yum.repos.d/epel.repo https://mirrors.aliyun.com/repo/epel-7.repo epel企业级linux的额外软件包
+		[base]
+		name=CentOS-$releasever - Base - mirrors.aliyun.com
+		failovermethod=priority  可写可不写，如果yum地址失效，则使用下面的地址
+		baseurl=http://mirrors.aliyun.com/centos/$releasever/os/$basearch/
+				http://mirrors.aliyuncs.com/centos/$releasever/os/$basearch/
+				http://mirrors.cloud.aliyuncs.com/centos/$releasever/os/$basearch/
+		gpgcheck=1  校验
+		gpgkey=http://mirrors.aliyun.com/centos/RPM-GPG-KEY-CentOS-7
+		enabled=1   是否开启这个源 0 1
+	  查 yum provides 命令或文件  找出这个命令或文件属于的软件包
+	     yum search all ifconfig 会找出多个，根据经验选择
+		 yum repolist 查看yum源   
+		 yum list  显示仓库中所有软件包  | grep x
+	  删 yum remove x 不建议使用，会把依赖也删除   用rpm -e 删除 
+		 yum clean all  删除清空本地缓存  yum makecache生产缓存
+	  改-升级  yum install 的时候自带安装和更新
+			 yum update/upgrade  更新
+2，进程管理 ps 查看当前瞬间进程状态 top  动态，交互，整体查看系统状态，负载，僵尸进程，cpu，内存..
+	程序：安装包，程序代码，app，存放在磁盘上面
+	进程：运行起来的程序，命令，服务都算进程，运行在内存中
+	守护进程：一直运行的进程，也可以叫服务
+	 僵尸进程：子进程比父进程先结束，父进程没有回收子进程，此时子进程会一直占用资源
+		ps aux | grep Z 查看   top 第二行zombie 查看个数
+		找到上级进程，结束进程。
+	 孤儿进程：父进程执行完成或被终止后仍继续运行的子进程。  会被系统直接接管，system进程
+	ps ps -ef   UID进程属于的用户  PID进程id号  ppid父进程的id号pstree -p查看详细关系   CMD进程名字 
+	   ps aux 比ef多cpu、内存使用率，占用内存大小，进程状态
+	 进程状态STAT：运行中，僵尸进程，io进程，前台或后台运行的进程   基本状态+附加组成
+	  R  进程进行						s 控制进程  Ss进程的领导者
+	  S	 可中断进程					< 进程高优先级 S<优先级较高的进程
+	  T  进程被暂停（挂起）ctrl z		N 进程低优先级 SN优先级较低的进程
+	  D  不可中断进程（io读写）			+ 运行在前台
+	  Z  僵尸进程 					l 进程是多线程的
+	top 时间 用户 负载 
+		进程汇总信息
+		cpu使用率
+		内存使用情况
+		swap使用情况
+	后台管理
+		前台：需要连接后进程运行或操作，连接断开这个命令，操作就自动结束
+		后台：让软件进入系统的后套，持续运行，连接断开也不影响运行
+		sleep 9999 & 后台运行    jobs 查看 
+		nohup ping 192.168.123.130 &   保留输出内容到指定文件
+		ctrl z  bg后台，fg前台
+		screen  yum -y install screen  
+			screen       ping 192.168.123.130     ctrl a d 断开screen
+			screen -ls  查看       screen -r  恢复screen  ctrl d 彻底结束screen
+	结束进程  kill+进程pid  pkill+进程名字，模糊查找    killall+进程名字，精确  -9强制
+3，负载 衡量系统繁忙程度指标 1 5 15分钟
+		监控软件发现负载高
+		判断cpu还是io导致的负载高
+			top  iotop -o
+4，服务管理 systemctl
+	systemctl enable/disable/start/stop/restart/status  sshd  
+	systemctl list-units 服务运行情况
+	systemctl list-unit-files  服务开机自启动情况
+	 如果systemctl无法管理，用/etc/rc.local文件实现 第一次属于授权 chmod +x /etc/rc.d/rc.local/
+5,linux运行级别	
+	0 关机
+	1 救援模式  单用户模式
+	2 多用户模式 无网络的多用户模式
+	3 多用户模式  命令行模式，文本模式，工作默认模式
+	4 多用户模式 未使用
+	5 图形化界面
+	6 重启
+    systemctl get-default 查看   systemctl set-default graphical.target 修改
+	init 0 
+
+
+
+
+
+
+	
+
