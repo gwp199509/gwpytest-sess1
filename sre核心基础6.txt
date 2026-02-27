@@ -1,0 +1,54 @@
+定时任务 cron
+  服务使用流程： 部署、配置、优化、排障、其他(监控、备份、日志、认证...)
+  相关文件
+	/var/spool/cron/  用户的定时任务的配置文件的目录
+	crontab   定时任务管理的命令
+	/var/log/cron   定时任务日志
+  配置的命令
+	crontab -l   cat /etc/spool/cron/用户  查看定时任务
+	crontab -e   vim /etc/spool/cron/用户  编辑定时任务
+  格式   什么时间   做什么
+	分0-59 时0-23 日1-31 月1-12 周0-6   命令或脚本
+	x/y每隔y时间  x-y x到y范围  x,y,z ,独立时间   *每，全部，所有
+	*/2 * * * * /sbin/ntpdate ntp1.aliyun.com >/dev/null 2>&1     输出到黑洞，防止一直发邮件占空间
+	mkdir -p /backup/    mkdir -p /servers/scripts/
+	vim /servers/scripts/backup-conf.sh
+	  tar -zcf /backup/etc.tar.gz /etc/
+	vim /etc/spool/cron/root
+	00 00 * * * sh /servers/scripts/backup-conf.sh >>/tmp/bk.log 2>&1 追加到文件
+  PATH变量  export PATH=/usr/local/bin,/usr/local/sbin,/usr/bin,/usr/sbin/
+       source /etc/profile
+网络架构
+  网络管理命令
+  检查端口： ss -lntup | grep 22
+			netstat -lntup | grep -w 22
+			lsof -nPi :22 
+		telnet 192.168.123.130 22
+		nc 192.168.123.130 22
+		nmap -p22 192.168.123.130   nmap网络扫描工具
+  检查tcp连接
+		ss -ant      netstat -ant
+  压力测试  ab -n 90000 -c 3 http://192.168.123.130/
+  查看网络速度
+	iftop -nNP -i eth0     2s 10s 40s网速
+  查看DNS解析
+	dig   host  nslookup
+  追踪
+	traceroute -nI www.baidu.com  默认udp，-I使用icmp
+	
+ 	
+	
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
