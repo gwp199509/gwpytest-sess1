@@ -1,0 +1,53 @@
+2块网卡，一个公网192.168.123.x，一个局域网，选lan区段172.16.1.x
+关闭firewalld，selinux
+curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo
+curl -o /etc/yum.repos.d/epel.repo https://mirrors.aliyun.com/repo/epel-7.repo
+yum clean all    yum repolist
+yum -y install vim tree wget bash-completion bash-completion-extras lrzsz net-tools sysstat iotop 
+  iftop htop unzip nc nmap telnet bc psmisc httpd-tools bind-utils nethogs expect sl
+提升ssh连接速度  GSSAPIAuthentication no   UseDNS no   systemctl restart sshd
+时区，配置定时同步时间任务
+主机名   hosts解析
+1，技术栈
+	开发：gitlab，github,gitee,gogs  存放代码
+		 jenkins   集成，发布代码
+		 sonarqube   代码检查
+		 nexus    私服，软件包仓库(java)
+	用户：DNS云解析，bind9，NDSmasq，CoreDNS    dns解析
+		 CDN    cdn缓存，各种厂商的cdn服务
+		 防火墙	硬件：深信服，奇安信.. 
+				软件：firewalld，iptables
+		 负载均衡  硬件：F5..
+				  软件： nginx，tengine,openResty,haproxy，lvs，
+		 web服务器  nginx，tengine,openResty，
+				   lnmp（php）  linux nginx MySQL php  
+				   lnmt（java） linux nginx MySQL Tomcat
+				   lnmp（python）linux nginx MySQL python
+				   lnmg（golang）linux nginx MySQL golang
+		 缓存服务器 redis，kafka，rabbitmq，rocketmq
+		 数据库服务器 MySQL，oracle，mariadb，
+		 存储   硬件存储
+				软件存储：nfs，分布式存储...，
+				对象存储：
+		 实时同步 sersync，lsyncd
+		 备份  定时任务，脚本，打包压缩
+				rsync
+	运维：vpn    硬件，openvpn，
+		 堡垒机   teleprot，jumpserver
+		 批量管理 ansible，saltstack,puppet,chef,farbic
+		 监控   zabbix，grafana，prometheus
+		 日志收集平台  elastic stack（ELK，EFK，EBLK，ElasticSearch，Filebeat，Logstash，Kibana）
+		 审计  sql审计,yearning,archery,
+			  操作审计（堡垒机）
+		 安全  appscan，nessus，clamav
+
+
+
+
+
+
+
+
+
+
+
