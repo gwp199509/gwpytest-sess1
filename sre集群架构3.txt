@@ -1,0 +1,394 @@
+1,sshd，openssh服务
+  实现加密的远程连接/传输数据
+  openssh-server 服务端（sshd，/etc/ssh/sshd_config）
+  openssh-clients 客户端命令 scp、ssh、sftp..
+  telnet服务未加密远程连接，在openssh服务升级的时候可以做备用
+   yum -y install telnet-server
+   systemctl start telnet.socket
+   systemctl disable telnet.socket
+  openssh /etc/ssh/sshd_config
+    连接加速  UseDNS no    GSSAPIAuthentication no
+	  Port 10000
+	  PermitRootLogin yes
+	  ListenAddress 监听的地址，需要指定本地网卡的IP地址，可以控制用户只通过内网访问，一般配合堡垒机，vpn
+  scp -r -p -P 22   传输目录 保持属性不变 指定端口
+  ssh -p 22 gwp@192.168.123.200
+  sftp 
+    ftp文件传输协议，服务端和客户端，端口21和20
+	openssh也提供ftp功能，sftp，端口22
+	ftp客户端：常用sftp命令，软件xftp，winscp...
+2,秘钥认证（免密登录）
+  密钥对：公钥 public key 一般以.pub结尾  私钥 private key
+  ssh-keygen -t rsa  生成密钥对，会提示存放位置
+  ssh-copy-id -i /root/.ssh/id_rsa.pub root@172.16.1.210  传输公钥
+		公钥存放在客户端/root/.ssh/authorized_keys
+  ssh root@172.16.1.210  免密登陆
+3，免密自动化sshpass  适用于给ssh相关的命令提供密码
+  ssh-keygen -t rsa -f /root/.ssh/id_rsa -P ''
+  yum -y install sshpass
+  sshpass -p Admin@coc1 ssh-copy-id -i /root/.ssh/id_rsa.pub root@172.16.1.200 
+		不是第一次才可以，不提示yes/no
+  sshpass -p Admin@coc1 ssh-copy-id -i /root/.ssh/id_rsa.pub -o StrictHostKeyChecking=no root@172.16.1.220
+        -o StrictHostKeyChecking=no  不严格检查，第一次时不提示yes/no
+4,ansible批量自动化
+  yum -y install ansible
+  配置文件 /etc/ansible/ansible.cfg
+    host_key_checking = False   关闭主机检查
+	log_path = /var/log/ansible.log  日志
+  主机清单   让ansible管理的节点的列表
+    默认/etc/ansible/hosts,一般会把主机清单会存放在指定目录，运行ansible时，通过-i指定清单文件即可
+	[web]
+	172.16.1.210
+	[nfs]
+	172.16.1.220
+	ansible all -m ping 检查  all [web] 172.16.1.210 要操作的机器
+	[data:children]  添加一个分组，包含其他分组
+	web
+	nfs
+	ansible data -m ping 
+  模块    类似于linux中的命令，yum模块，file模块，user模块....选项一般都是单词  
+    命令和脚本魔力
+		command模块 默认的模块，执行简单命令，不支持特殊符号
+		shell模块 执行命令，支持特殊符号
+		script模块，分发脚本并执行
+    文件模块
+		file 创建目录，文件，软链接
+		copy 远程分发文件，修改权限，所有者，备份
+	command模块
+	  ansible all -m command -a 'hostname'   -a动作， 命令
+	shell
+      ansible all -m shell -a 'rm -rf /data/*'  shell支持正则
+	script  分发脚本，在被管理端运行脚本
+	  vim /server/scripts/info.sh
+	  ansible all -m script -a '/server/scripts/info.sh'   会在被管理主机临时存放脚本/tmp/下，执行完后就删除
+	file  管理文件、目录、软链接
+	  path  路径，必须写
+	  src  源文件，一般用于link
+	  state 状态  state=directory 创建目录 state=file(默认)更新文件，不存在也不创建
+	    state=link 创建软链接    state=touch  创建文件    state=absent删除，如果是目录则递归删除
+	  mode  mode=755  创建并修改权限
+	  owner  onwer=root
+	  group  group=root
+	copy模块
+	  src  源文件
+	  dest 目标
+	  backup =yes  如果存在会在覆盖前备份
+	  mode  修改权限
+	  owner  
+	  group
+	  ansible all -m copy -a 'src=/etc/hosts dest=/etc/hosts backup=yes'
+	systemd模块  服务
+	  name  服务名称
+	  enabled =yes/no 是否开机启动
+	  state  state=started  state=stopped  state=reloaded  state=restarted
+	  daemon-reload =yes/no 是否重新加载对用服务的管理配置文件
+	  ansible all -m systemd -a 'name=firewalld enabled=no state=stopped'
+	yum模块   软件包
+	  name  软件包名
+	  state  installed(present) 默认   removed(absent)删除   lastest安装或更新
+	  update_cache  =yes/no 是否更新本地缓存
+	get_url模块
+	  url  要下载的地址
+	  dest  下载到哪
+	yum_repository模块
+	  name   description  baseurl  enabled  gpgcheck  
+	user模块 group模块
+	  name uid group shell  create_home yes/no是否创建家目录 state  present/absent
+	mount模块
+      fstype   src   path  
+	  state	absent卸载并修改fstab mounted挂载并修改fstab unmounted卸载不修改 present仅修改不挂载 remounted重新挂载
+	cron模块
+	  name  定时任务名字，必须写，对应下面注释的内容
+	  minute hour day month week
+	  job 指定命令或脚本(定向到空)job="/sbin/ntpdate ntp1.aliyun.com &>/dev/null"
+	  state  present默认  absent
+5,playbook剧本 用于长久保存并实现批量管理、维护、部署的文件
+  yaml格式
+  ---
+  - hosts: all  指定角色，指定要操作的主机
+    tasks：
+	  - name: 01 打开冰箱门
+	    shell: echo 01 >> /tmp/1.txt
+	  - name: 02 把大象放入冰箱
+	    shell: echo 02 >>/tmp/1.txt
+	  - name: 03 关闭冰箱门
+	    shell: echo 03 >>/tmp/1.txt
+  ansible-playbook -i hosts 1.show.yml
+   分发hosts文件 
+	---
+	- hosts: all
+	  tasks:
+		- name: 1 create
+		  file:
+			path: /server/files/
+			state: directory
+		- name:  2 push
+		  copy:
+			src: /etc/hosts
+			dest: /server/files/
+		建议用：的格式替代=
+	分发软件包，安装，启动
+	---
+	- hosts: all
+	  tasks:
+		- name: wget
+		  get_url:
+			url:  "https://mirrors.tuna.tsinghua.edu.cn/zabbix/zabbix/6.0/rhel/7/x86_64/zabbix-agent2-6.0.7-1.el7.x86_64.rpm"
+			dest: /tmp/
+		- name: yum install
+		  yum:
+			name: /tmp/zabbix-agent2-6.0.7-1.el7.x86_64.rpm
+			state: installed
+		- name: enable
+		  systemd:
+			name: zabbix-agent2
+			enabled: yes
+			state: started
+6，变量
+  在剧本文件中定义   仅限于当前的play使用
+  变量文件，根据主机清单分组进行定义变量    多个剧本使用相同变量
+  register变量(注册变量) 实现脚本中反引号的功能，可以获取命令结果
+  剧本palybook中  仅限当前play生效   
+   ---
+	- hosts: all
+	  vars:    变量
+		dir: /data4      变量名： 值
+	  tasks:
+		- name: mkdir
+		  file:
+			path: "{{dir}}"           {{变量名}}   调用变量
+			state: directory
+  共用变量
+  vim vars.yaml
+	user: gwp
+	dir: /data5/
+	file: /etc/hosts
+  vim 3.yaml
+    ---
+	- hosts: all
+	  vars_files: ./vars.yaml   导入共用变量文件，相对或绝对路径
+	  tasks:
+		- name: print vars
+		  debug:
+			msg: "vars:{{user}}{{dir}}{{file}}"   
+  或者  在playbook剧本同目录下创建group_vars,再创建主机清单里分组对应的目录或all，再创建vars.yaml,会自动根据分组调用对应的变量
+  mkdir -p group_vars/all/
+  vim group_vars/all/vars.yaml 
+	user: gwp
+	dir: /data5/
+	file: /etc/hosts
+  vim 4.yaml 
+	---
+	- hosts: all           不用再导入共用变量文件，直接调用
+	  tasks:
+		- name: print vars
+		  debug:
+			msg: "vars: {{user}}{{dir}}{{file}}"
+  register变量(注册变量)  相当于反引号``功能
+  vim 5.yaml
+	---
+	- hosts: all
+	  tasks:
+		- name: register
+		  shell: date +%F
+		  register: result          把上面的执行结果存放在result变量中，json格式
+		- name: debug
+		  debug:
+			msg: "result: {{result.stdout}}"   调用变量
+  facts变量 ans内置变量，ans运行剧本时会有一个默认的task，收集每个主机的基本信息，这些基本信息就是facts变量
+  可以关闭获取，剧本中gather_facts: no
+  ansible web -i hosts -m setup  查看详细facts变量
+  ansible_hostname
+  ansible_memtotal_mb
+  ansible_processor_vcpus
+  ansible_default_ipv4.adress
+  ansible_distribution
+  ansible_date_time.data
+7，流程控制  handler  loop/with_items   when
+  handler  一般用于分发配置文件时，如果配置文件发生变化则重启服务，如果配置文件无变化则不重启服务
+  vim handlers.yaml
+	---
+	- hosts: nfs
+	  gather_facts: no
+	  tasks:
+		- name: push
+		  copy:
+			src: ./exports
+			dest: /etc/exports
+			backup: yes
+		  notify:        监控上面配置文件内容是否变化，埋雷
+			- restart_nfs
+	  handlers:            如果变化就触发操作，如果未变化则不做操作   handlers放在剧本最后
+		- name: restart_nfs
+		  systemd:
+			name: nfs
+			state: restarted
+  when 进行判断，一般与变量一起使用  == ！=  and or
+  vim when.yaml
+	---
+	- hosts: all
+	  tasks:
+		- name: centos yum sl
+		  yum:
+			name: sl
+			state: present
+		  when: ansible_hostname == "gwp210"   当主机名是gwp210时执行，不是时跳过
+  with_items   loop 
+  单变量
+  vim loop.yaml
+	---
+	- hosts: nfs
+	  tasks:
+		- name: push
+		  copy:
+			src: ./exports
+			dest: /etc/exports
+		- name: restart rpcbind,nfs
+		  systemd:
+			name: "{{item}}"     定义循环变量
+			state: restarted
+		  with_items:       with_items和loop都行
+			- rpcbind       循环变量的值
+			- nfs
+  多变量
+  vim loop_more.yaml
+	---
+	- hosts: all
+	  gather_facts: no
+	  tasks:
+		- name: useradd
+		  user:
+			name: "{{item.x}}"         调用item变量里xy的值
+			uid: "{{item.y}}"
+			state: present
+		  loop:
+			- { x: "oldboy",y: 2020}         xy变量名随便起
+			- {x: "oldboy.lidao",y: 2021}
+8，剧本调试  -C模拟运行，没真正运行，
+  --syntax-check   只做语法格式检查，不实际运行
+  --step 单步运行  y运行当前task，n跳过当前task，c正常运行下去
+  tag标签，给task加上标签，运行时 -t  指定运行或排除某些task
+  忽略错误
+	---
+	- hosts: all
+	  gather_facts: no
+	  tasks:
+		- name: useradd
+		  user:
+			name: "{{item.x}}"
+			uid: "{{item.y}}"
+			state: present
+		  loop:
+			- { x: "oldboy",y: 2020}
+			- {x: "oldboy.lidao",y: 2021}
+		  tags:
+			- 01.useradd
+		  ignore_errors: true
+9，jinjia2模板  文件以.j2结尾，用template模块传输，就会替换文件中的ansible变量
+10，include文件  把单个大的剧本拆分成多个小的剧本，多个小的剧本通过include合并使用。
+    a.yaml   b.yaml   只写tasks下面的-name内容
+	all.yaml    只执行all.yaml  
+	- hosts: x
+	  tasks:
+        - include_tasks: a.yaml    x主机调用a任务
+    -  hosts: y
+       tasks:
+         - include_tasks: b.yaml	   y主机调用b任务
+11,roles 是一套剧本目录结构的要求与标准，把剧本的内容和需要的文件，按目录要求，分门别类存储。
+    roles/  
+	  top.yml主剧本/入口剧本
+	  hosts   主机清单
+	  nfs-server/             一个task一个目录，有几个task创建几个目录
+	    files/                 存放待调用文件
+		tmplates/              存放.j2文件
+		tasks/   main.yaml     存放剧本里的tasks
+		handlers/  main.yaml   存放剧本里的handlers
+	  group_vars/           变量文件
+	    all/main.yaml
+  入口剧本
+  top.yaml
+  - hosts: nfs
+    roles:
+	  - role: nfs-server
+  - hosts: web
+    rolse:
+	  - role: nfs-client
+  进到roles/目录下，ansible-playbook -i hosts top.yaml   就会执行tasks/main.yaml，根据需要再调用其他目录
+  
+  
+
+   
+  
+  
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
